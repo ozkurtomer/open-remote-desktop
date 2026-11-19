@@ -1,115 +1,98 @@
 # Open Remote Desktop
 
-Kendi altyapınızda çalışan, açık kaynak (MIT) uzaktan masaüstü sistemi. AnyDesk/TeamViewer gibi üçüncü taraf bir servise bağlı değildir. VPN içinde, LDAP/Active Directory ile çalışacak şekilde tasarlandı: **herkes yalnızca kendi bilgisayarlarına bağlanabilir.**
+**Kendi bilgisayarına uzaktan eriş: açık kaynak, ücretsiz, hesap yok, üçüncü taraf servis yok.**
+*Reach your own computer from your phone or another device. Open source, free, no account, no third-party remote-desktop service.*
 
-```
-Ofis PC (host, tepsi uygulaması) ──wss──┐
-                                         ├──▶ [Sunucu: Caddy(TLS) → signaling+hesap/cihaz kaydı] + coturn   (iç ağ / VPN)
-Ev PC (tarayıcı, LDAP girişi) ───VPN────┘
-            └────────── video + fare/klavye: WebRTC (P2P veya TURN röle, şifreli) ──────────┘
-```
+Tek uygulama: bilgisayarına kur, bir parola belirle, telefonundan tarayıcıyla bağlan. AnyDesk/TeamViewer'a gerek yok.
 
-| Klasör | Açıklama |
-|---|---|
-| `server/` | Signaling, hesap/cihaz kaydı, sahip kontrolü, audit log, LDAP, admin CLI, testler |
-| `viewer/` | Tarayıcı arayüzü (giriş + "Cihazlarım"). Kurulum gerektirmez |
-| `host/` | Paylaşılacak bilgisayarda çalışan Electron uygulaması (tepsi, otomatik bağlanma, ekran yakalama, girdi) |
+## Özellikler
 
-## Kişisel kullanım (tek kişi, kendi bilgisayarına, ücretsiz)
+- **Tek paket:** Sunucu, web arayüzü ve internet tüneli uygulamanın içinde gömülü. Ayrıca bir şey kurmazsın.
+- **Telefona kurulum yok:** Telefondan sadece tarayıcı. Dokunmatik kontrol: imleç sürükleme, tık, sağ tık, kaydırma, ekran klavyesi, Ctrl/⌘/Esc/ok tuşları.
+- **Ücretsiz uzaktan erişim:** Tek tuşla Cloudflare tüneli (hesap açmadan) veya Tailscale ile.
+- **Gözetimsiz erişim:** Bilgisayarının başında kimse olmasa da bağlanırsın. Bağlanınca bilgisayarda bildirim çıkar.
+- **Şifreli:** Görüntü ve kontrol WebRTC ile uçtan uca şifrelenir. Parola yalnızca özet (scrypt) olarak saklanır.
+- **İsteğe bağlı kurumsal mod:** LDAP/Active Directory, çoklu kullanıcı, VPN içi kurulum: [docs/COMPANY.md](docs/COMPANY.md).
 
-Ayrı sunucu, hesap, LDAP veya bulut gerekmez. Sunucu host uygulamasının içinde çalışır.
+## Kurulum
 
-**Hazır uygulama (macOS, Apple Silicon):** [Releases](../../releases) sayfasından `OpenRemoteDesktop-*-arm64.dmg` indir, aç, uygulamayı **Applications**'a sürükle.
-İlk açılışta macOS "doğrulanamadı" derse (uygulama Apple'a ücretli kayıtlı bir geliştirici imzası taşımıyor, ad-hoc imzalı):
-- Uygulamaya **sağ tık → Aç → Aç**, veya
-- `xattr -cr /Applications/OpenRemoteDesktop.app` komutunu çalıştır.
+[**Releases**](../../releases) sayfasından işletim sistemine uygun dosyayı indir:
 
-Sonra *Ekran Kaydı* ve *Erişilebilirlik* izinlerini **OpenRemoteDesktop** için ver ve uygulamayı yeniden aç.
+| Sistem | Dosya | Durum |
+|---|---|---|
+| macOS (Apple Silicon) | `OpenRemoteDesktop-*-mac-arm64.dmg` | Denendi (yerel derleme) |
+| macOS (Intel) | `OpenRemoteDesktop-*-mac-x64.dmg` | GitHub Actions ile üretilir, **denenmedi** |
+| Windows | `OpenRemoteDesktop-*-win-x64.exe` | GitHub Actions ile üretilir, **denenmedi** |
+| Linux | `OpenRemoteDesktop-*-linux-x64.AppImage` | GitHub Actions ile üretilir, **denenmedi** |
 
-**Kaynaktan çalıştırma:**
+**macOS:** `.dmg`'yi aç, uygulamayı **Applications**'a sürükle. Uygulama Apple'a ücretli kayıtlı bir geliştirici imzası taşımıyor (ücretsiz "ad-hoc" imzalı), bu yüzden ilk açılışta macOS "doğrulanamadı" diyebilir:
+- uygulamaya **sağ tık → Aç → Aç**, veya
+- `xattr -cr /Applications/OpenRemoteDesktop.app`
 
-1. `cd host && npm install && npm start`   (paket üretmek için: `npm run dist`)
-2. **Kişisel (sadece ben)** sekmesinde bir parola belirle (en az 10 karakter), **Başlat**'a bas. Pencerede bağlantı adresleri ve QR kod çıkar.
-3. **Aynı Wi-Fi'da:** telefonda çıkan adresi aç (`http://192.168.x.x:8080`), parolanla gir, **Bağlan**.
-4. **Evin dışından (ücretsiz):** bu bilgisayara ve telefona [Tailscale](https://tailscale.com) kur, aynı hesapla giriş yap. Host penceresinde `100.x.x.x` adresi çıkar, telefonda onu aç. Tailscale trafiği şifreler, bu yüzden portu internete açmana gerek kalmaz.
-5. macOS'ta *Ekran Kaydı* ve *Erişilebilirlik* izinlerini ver.
+Sonra *Sistem Ayarları → Gizlilik ve Güvenlik* altında **Ekran Kaydı** ve **Erişilebilirlik** izinlerini *OpenRemoteDesktop* için ver ve uygulamayı yeniden aç.
 
-> **Güvenlik:** Adresi doğrudan internete açma (router'da port yönlendirme yapma). Düz HTTP ile parola gider, yalnızca Tailscale/VPN veya güvenilir yerel ağ üzerinden kullan. Uzun ve benzersiz bir parola seç.
+## Kullanım
 
-Kişisel mod dışındaki bölümler (LDAP, sunucu kurulumu) şirket kullanımı içindir.
+1. Uygulamayı aç, **Kişisel (sadece ben)** sekmesinde bir parola belirle (en az 10 karakter, uzun ve benzersiz olsun), **Başlat**'a bas.
+2. Pencerede adres ve QR kod çıkar.
+3. Telefonda adresi aç (veya QR'ı tara), parolanla giriş yap, bilgisayarını seç, **Bağlan**.
 
-## Nasıl çalışır (şirket kurulumu)
-1. Kullanıcı ofis bilgisayarında host uygulamasını açar, **şirket kullanıcı adı ve parolasıyla bir kez** bağlar. Parola saklanmaz, cihaz özel bir token alır.
-2. Host arka planda çalışır ve sunucuya kalıcı bağlı kalır (kopunca otomatik yeniden bağlanır).
-3. Kullanıcı evden VPN'e bağlanır, `https://rc.sirket.local` adresini açar, LDAP bilgileriyle girer ve **yalnızca kendi cihazlarını** görür.
-4. **Bağlan**'a basınca ekran görünür ve kontrol edilir. Ofiste kimse onay vermek zorunda değildir (host'ta "her bağlantıda bana sor" ayarı açılabilir).
+### Başka ağdan (evin dışından) bağlanmak
 
-## Yerelde deneme (tek bilgisayar)
+| Yöntem | Telefona kurulum | Nasıl | Dikkat |
+|---|---|---|---|
+| **Aynı Wi-Fi** | Yok | Pencerede görünen `http://192.168.x.x:8080` adresi | Yalnızca aynı ağda |
+| **Cloudflare tüneli** (uygulamada tek tuş) | Yok | **İnternetten erişimi aç** düğmesi, çıkan `https://...trycloudflare.com` adresi | Adres **internete açık**, yalnızca parolan korur. Adres her açışta değişir. Cloudflare bu özelliği "test/geliştirme amaçlı" olarak sunar, çalışma süresi garantisi yoktur |
+| **Tailscale** | Tailscale uygulaması | Her iki cihaza [Tailscale](https://tailscale.com) kur (kişisel kullanım ücretsiz), aynı hesapla gir, pencerede çıkan `100.x.x.x` adresini aç | En güvenli seçenek: internete hiçbir şey açılmaz |
 
-```bash
-cd server && npm install
-npm run admin -- add-user ali            # yerel deneme hesabı (parolayı sorar, min 10 karakter)
-npm start                                # http://localhost:8080  (varsayılan AUTH_MODE=local)
-```
-```bash
-cd host && npm install && npm start      # ikinci terminalde
-```
-1. Host penceresinde sunucu `http://localhost:8080`, kullanıcı `ali` ve parolayı girip **Bağla**'ya bas.
-2. Tarayıcıda `http://localhost:8080` aç, `ali` ile giriş yap, cihazın listede **çevrimiçi** görünür, **Bağlan**.
-3. macOS: *Privacy & Security* altında **Screen Recording** ve **Accessibility** izinlerini ver, host'u yeniden başlat.
-
-Testler: `cd server && npm test`
-
-## Şirkette kurulum (VPN içi)
-
-**Gereksinimler:** İç ağda bir Linux VM, Docker, bir iç alan adı (`rc.sirket.local`), şirket CA'sından bu ad için sertifika, LDAP için salt-okunur servis hesabı.
-
-```bash
-cp .env.example .env            # RC_HOST, TURN_SECRET, LDAP_* alanlarını doldur
-mkdir certs && cp rc.crt rc.key certs/    # (+ LDAP CA gerekiyorsa certs/ldap-ca.pem ve .env'de LDAP_CA_FILE=/certs/ldap-ca.pem)
-docker compose up -d --build
-```
-
-**BT'den istenecekler (firewall):**
-| Kaynak → Hedef | Port |
-|---|---|
-| VPN ve ofis ağı → sunucu | TCP 443 (arayüz + signaling) |
-| VPN ve ofis ağı → sunucu | TCP/UDP 3478 (TURN) |
-| VPN ve ofis ağı → sunucu | UDP 49160–49200 (TURN röle) |
-| Sunucu → domain controller | TCP 636 (LDAPS) |
-
-İnternet erişimi gerekmez. Harici STUN/bulut kullanılmaz. TURN'ün iç ağda şart olmasının sebebi: tarayıcılar yerel IP'leri `.local` (mDNS) adıyla gizler, mDNS VPN'den geçmez, bu yüzden doğrudan P2P çoğu zaman kurulamaz. TURN bunu ve VPN istemci izolasyonunu aşar.
-
-**LDAP ayarları** (`.env`):
-- Active Directory: varsayılanlar çalışır (`sAMAccountName`).
-- OpenLDAP: `LDAP_USER_FILTER=(uid={u})`, `LDAP_ID_ATTR=uid`.
-- Yalnızca belirli bir gruptakiler kullanabilsin: `LDAP_REQUIRED_GROUP=cn=uzaktan-erisim,ou=Groups,dc=sirket,dc=local`.
-- Düz metin `ldap://` reddedilir. `ldaps://` kullanın veya `LDAP_STARTTLS=1` verin.
-- `AUTH_MODE=both` yerel (acil durum/admin) hesapları LDAP ile birlikte açar.
-
-**Host'ları dağıtma:** Uygulama paketlendiğinde oturum açılışında otomatik başlar (tepside). Çalışan sunucu adresini (`https://rc.sirket.local`) ve kendi LDAP bilgilerini bir kez girer. Şirket kök CA'sı işletim sistemine kuruluysa (kurumsal cihazlarda genelde kurulu) host sertifikaya güvenir.
-
-**Yönetim:**
-```bash
-docker compose exec signaling node server/admin.js list-users
-docker compose exec signaling node server/admin.js list-devices
-docker compose exec signaling node server/admin.js del-user ali      # kullanıcı + cihazları
-docker compose exec signaling tail -f /data/audit.log               # kim, ne zaman, hangi cihaz
-```
+> **Görüntü akışı tünelden geçmez.** Tünel yalnızca giriş ve bağlantı kurulumu içindir. Görüntü, telefon ile bilgisayar arasında doğrudan (WebRTC) akar. Bazı operatör/ağ yapılarında (özellikle mobil veri) doğrudan bağlantı kurulamayabilir ve görüntü gelmeyebilir. Bu durumda aynı Wi-Fi veya Tailscale kullan. Ücretsiz TURN röle desteği yol haritasında.
 
 ## Güvenlik
-Sahip kontrolü sunucuda ve testlidir, parolalar LDAP'ta kalır, medya uçtan uca şifrelidir. Ayrıntılar, bilinen sınırlar ve production gereksinimleri: [SECURITY.md](SECURITY.md).
+
+Uygulamayı kullanmadan önce [SECURITY.md](SECURITY.md) dosyasını oku. Özet:
+- Adresi router'da port yönlendirerek internete **açma**. Düz HTTP ile parola şifresiz gider; yalnızca Tailscale, kendi Wi-Fi'ın veya HTTPS tüneli üzerinden kullan.
+- Tüneli açıkken parolan tek savunma hattın. Uzun ve benzersiz bir parola seç, işin bitince tüneli kapat.
+- **Bu proje bağımsız bir güvenlik incelemesinden geçmedi.** Hassas ortamlarda kullanmadan önce kodu kendin incele.
+- Yalnızca **sahibi olduğun** bilgisayarlarda kullan.
+
+## Kaynaktan derleme
+
+```bash
+git clone <bu-repo> && cd open-remote-desktop/host
+npm install
+npm run fetch-cloudflared   # cloudflared'i indirir (SHA-256 doğrulamalı)
+npm start                   # geliştirme
+npm run dist                # kurulum paketi üretir (host/dist/)
+```
+Sunucu testleri: `cd server && npm install && npm test`
+
+## Nasıl çalışır
+
+```
+Telefon (tarayıcı) ──https/wss──▶ [Uygulama içindeki sunucu: giriş, eşleştirme]
+        ▲                                   │ (cloudflared tüneli veya LAN/Tailscale)
+        └──── video + fare/klavye: WebRTC (P2P, şifreli) ◀──── Uygulama (ekran yakalama, girdi)
+```
+- `host/`: Electron uygulaması (ekran yakalama, fare/klavye uygulama, tepsi, tünel yönetimi)
+- `server/`: giriş, cihaz sahipliği, eşleştirme (signaling), testler
+- `viewer/`: telefon/tarayıcı arayüzü (dokunmatik kontrol dahil)
+
+## Bilinen sınırlar
+
+- Yalnızca birincil ekran paylaşılır; ses yok; pano/dosya aktarımı yok.
+- Çift tıklamanın hedef bilgisayarda doğru algılandığı doğrulanmadı.
+- Windows'ta UAC/kilit ekranı kontrol edilemez (servis modu yok).
+- Windows ve Linux paketleri CI ile üretilir ama gerçek cihazlarda denenmedi.
+- Hızlı tünel adresi her açılışta değişir; kalıcı adres için kendi Cloudflare hesabınla adlandırılmış tünel veya Tailscale kullan.
 
 ## Yol haritası
-- [ ] Windows servis modu (UAC / kilit ekranı)
-- [ ] Paketleme (electron-builder), kod imzalama, otomatik güncelleme, toplu dağıtım (MSI/Intune)
-- [ ] OIDC/SSO ve AD grup değişikliklerinin otomatik yansıması
-- [ ] Çoklu monitör, pano ve dosya aktarımı, ses
-- [ ] IT destek rolü (çalışan onayıyla başkasının cihazına bağlanma)
-- [ ] CI (GitHub Actions)
 
-## Durum
-Erken aşama. Sunucu mantığı (sahip kontrolü, LDAP akışı, güvenlik kontrolleri) otomatik testlerle doğrulanır (sahte LDAP istemcisiyle). Gerçek bir LDAP sunucusu ve host'un ekran yakalama/girdi kısmı sizin ortamınızda denenmelidir.
+- [ ] Ücretsiz TURN röle desteği (mobil veride bağlantı için)
+- [ ] Windows servis modu, çoklu monitör, pano ve dosya aktarımı
+- [ ] İki adımlı doğrulama (TOTP)
+- [ ] Apple geliştirici imzası/notarization ve Windows imzalama
+- [ ] Otomatik güncelleme
 
 ## Katkı ve lisans
-PR'lar açıktır, büyük değişikliklerden önce issue açın. [MIT](LICENSE): kullanabilir, değiştirebilir, ticari olarak da dağıtabilirsiniz.
+
+PR'lar açıktır, büyük değişikliklerden önce issue açın. Lisans: [MIT](LICENSE). Üçüncü taraf bileşenler: [THIRD_PARTY.md](THIRD_PARTY.md).

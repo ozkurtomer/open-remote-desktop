@@ -4,6 +4,7 @@
 certs/
 dist/
 host/bundled/
+host/vendor/
 node_modules/
 release/
 server/data/

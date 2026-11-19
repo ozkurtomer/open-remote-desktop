@@ -32,6 +32,8 @@ const serverDir = app.isPackaged ? path.join(__dirname, 'bundled', 'server') : p
 function startEmbedded(port) {
   // Herkese açık STUN (ücretsiz). Çoğu bağlantı doğrudan kurulur.
   process.env.ICE_SERVERS ||= JSON.stringify([{ urls: 'stun:stun.cloudflare.com:3478' }]);
+  // Tünelden gelen ziyaretçilerin gerçek IP'sini (hız sınırı) ve https bilgisini (güvenli çerez) kullan.
+  process.env.TRUST_PROXY = '1';
   const { start } = require(path.join(serverDir, 'server'));
   embedded = start({ port, dataDir: dataDir(), single: true, authMode: 'local', quiet: true });
   return new Promise((resolve, reject) => {
@@ -40,6 +42,26 @@ function startEmbedded(port) {
   });
 }
 function stopEmbedded() { if (embedded) { embedded.close(); embedded = null; } }
+
+// ---- İnternetten erişim: Cloudflare quick tunnel (cloudflared uygulamanın içinde gömülü) ----
+// Hesap/alan adı gerekmez. Adres her açılışta değişir ve herkese açıktır, yalnızca parola korur.
+let tunnel = null; // { proc, url }
+function cloudflaredPath() {
+  const exe = process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared';
+  return app.isPackaged ? path.join(process.resourcesPath, 'cloudflared', exe) : path.join(__dirname, 'vendor', 'cloudflared', exe);
+}
+function stopTunnel() { if (tunnel) { try { tunnel.proc.kill(); } catch {} tunnel = null; } }
+// Yerel (router) DNS yeni adresi önbelleğe "yok" diye alabilir. Genel DNS'te hazır olana kadar bekle.
+async function waitDns(host, ms = 40000) {
+  const r = new (require('dns').promises.Resolver)();
+  r.setServers(['1.1.1.1', '8.8.8.8']);
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    try { if ((await r.resolve4(host)).length) return true; } catch {}
+    await new Promise((res) => setTimeout(res, 1500));
+  }
+  return false;
+}
 
 // Bu bilgisayara hangi adreslerden ulaşılabilir (Tailscale adresi öne alınır)
 function accessUrls(port) {
@@ -103,7 +125,7 @@ if (!app.requestSingleInstanceLock()) {
     createWindow();
     createTray();
   });
-  app.on('before-quit', () => { quitting = true; stopEmbedded(); });
+  app.on('before-quit', () => { quitting = true; stopTunnel(); stopEmbedded(); });
   app.on('window-all-closed', () => {}); // tepside çalışmaya devam et
   app.on('activate', showWindow);
 }
@@ -124,6 +146,7 @@ ipcMain.handle('cfg:set', (e, patch) => {
   saveCfg(c);
 });
 ipcMain.handle('reset', () => {
+  stopTunnel();
   stopEmbedded();
   try { fs.unlinkSync(cfgFile()); } catch {}
   try { fs.rmSync(dataDir(), { recursive: true, force: true }); } catch {}
@@ -165,6 +188,36 @@ ipcMain.handle('net:info', async () => {
   const qr = urls[0] ? await QRCode.toDataURL(urls[0].url, { margin: 1, width: 180 }) : '';
   return { urls, qr };
 });
+
+ipcMain.handle('tunnel:start', async () => {
+  const c = loadCfg();
+  if (!c.personal || !embedded) return { ok: false, error: 'Yalnızca kişisel modda kullanılabilir' };
+  if (tunnel && tunnel.url) return { ok: true, url: tunnel.url, qr: await QRCode.toDataURL(tunnel.url, { margin: 1, width: 180 }) };
+  const bin = cloudflaredPath();
+  if (!fs.existsSync(bin)) return { ok: false, error: 'cloudflared bulunamadı. Kaynaktan çalıştırıyorsan: npm run fetch-cloudflared' };
+
+  const proc = require('child_process').spawn(bin, ['tunnel', '--url', `http://127.0.0.1:${c.port}`, '--no-autoupdate'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  tunnel = { proc, url: '' };
+  const url = await new Promise((resolve) => {
+    let buf = '';
+    const timer = setTimeout(() => resolve(''), 45000);
+    const onData = (d) => {
+      buf += d;
+      const m = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/.exec(buf);
+      if (m) { clearTimeout(timer); resolve(m[0]); }
+    };
+    proc.stdout.on('data', onData);
+    proc.stderr.on('data', onData);
+    proc.on('error', () => { clearTimeout(timer); resolve(''); });
+    proc.on('exit', () => { clearTimeout(timer); resolve(''); });
+  });
+  if (!url) { stopTunnel(); return { ok: false, error: 'Tünel açılamadı. İnternet bağlantını kontrol edip tekrar dene.' }; }
+  if (!(await waitDns(new URL(url).hostname))) { stopTunnel(); return { ok: false, error: 'Adres hazırlanamadı, biraz sonra tekrar dene.' }; }
+  tunnel.url = url;
+  proc.on('exit', () => { if (tunnel && tunnel.proc === proc) { tunnel = null; win?.webContents.send('tunnel:closed'); } });
+  return { ok: true, url, qr: await QRCode.toDataURL(url, { margin: 1, width: 180 }) };
+});
+ipcMain.handle('tunnel:stop', () => { stopTunnel(); });
 
 // Şirket sunucusuna bağlan: kullanıcı adı/parola ile bu cihazı hesaba bağla. Parola saklanmaz.
 // net.fetch Chromium sertifika deposunu kullanır; şirket CA'sı işletim sistemine kuruluysa güvenilir sayılır.

@@ -1,5 +1,6 @@
 # Bir etiket (v1.0.0 gibi) gönderildiğinde macOS, Windows ve Linux paketlerini üretip GitHub Release'e ekler.
-#   git tag v1.0.0 && git push origin v1.0.0
+#   git tag v1.0.1 && git push origin v1.0.1
+# Not: Windows/Linux/Intel-mac derlemeleri henüz gerçek cihazlarda denenmedi.
 name: Release
 on:
   push:
@@ -15,16 +16,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-14,      args: '--mac --arm64' }
-          - { os: macos-13,      args: '--mac --x64' }
-          - { os: windows-latest, args: '--win --x64' }
-          - { os: ubuntu-latest,  args: '--linux --x64' }
+          - { os: macos-latest,   args: '--mac --arm64',  cf_platform: darwin, cf_arch: arm64 }
+          - { os: macos-latest,   args: '--mac --x64',    cf_platform: darwin, cf_arch: x64 }
+          - { os: windows-latest, args: '--win --x64',    cf_platform: win32,  cf_arch: x64 }
+          - { os: ubuntu-latest,  args: '--linux --x64',  cf_platform: linux,  cf_arch: x64 }
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - name: Test (sunucu)
+        with: { node-version: 22 }
+      - name: Sunucu testleri
         if: matrix.os == 'ubuntu-latest'
         run: cd server && npm ci && npm test
       - name: Paketle
@@ -32,6 +36,7 @@ jobs:
         run: |
           npm ci
           npm run prepare-bundle
+          npm run fetch-cloudflared -- --platform ${{ matrix.cf_platform }} --arch ${{ matrix.cf_arch }}
           npx electron-builder ${{ matrix.args }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

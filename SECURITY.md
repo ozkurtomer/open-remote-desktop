@@ -17,6 +17,13 @@
 - `TURN_SECRET` uzun ve rastgele olsun. `data/` klasörüne yalnızca servis hesabı erişsin (yedekleri de koruyun).
 - LDAP için salt-okunur servis hesabı ve `ldaps://` (veya StartTLS) kullanın.
 
+## Kişisel mod ve internet tüneli
+- Kişisel modda tek hesap (`owner`) vardır. Sunucu uygulamanın içinde çalışır ve varsayılan olarak yerel ağdan erişilebilir (düz HTTP). Parolanın şifresiz gitmemesi için yalnızca Tailscale/VPN veya güvenilir Wi-Fi üzerinden kullanın.
+- **Cloudflare tüneli açıkken adres internete açıktır** ve tek savunma parolanızdır (HTTPS tünelde sağlanır, çerez `Secure`+`HttpOnly`+`SameSite=Strict`, deneme sınırı ve Origin kontrolü vardır). Uzun, benzersiz bir parola kullanın, işiniz bitince tüneli kapatın. Tünel varsayılan olarak kapalıdır ve her açılışta yeni, tahmin edilemez bir adres alır.
+- Tünel yalnızca giriş ve bağlantı kurulumunu taşır; görüntü ve kontrol WebRTC ile doğrudan akar ve şifrelidir.
+- Cloudflare tünel trafiğinin (giriş sayfası, parola dahil, TLS sonlandırması Cloudflare'de yapılır) görünür olduğu üçüncü taraftır. Bunu istemiyorsanız Tailscale kullanın.
+- Bağımsız bir güvenlik incelemesinden geçmemiştir.
+
 ## Bilinen sınırlar
 - **Hesap devre dışı bırakma gecikmesi:** AD'de devre dışı bırakılan kullanıcının mevcut tarayıcı oturumu (en çok 12 saat) ve kayıtlı cihaz token'ları sürer. Hemen kesmek için: `npm run admin -- del-user <kullanici>`. Gruba bağlı otomatik senkronizasyon yol haritasında.
 - Hesap kilitleme saldırganın bir kullanıcıyı geçici kilitlemesine izin verebilir (VPN içinde düşük risk).

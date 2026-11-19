@@ -56,6 +56,14 @@
       <div id="urls"></div>
       <img id="qr" alt="QR kod">
       <small id="tsHint" style="display:none">Evin dışından bağlanmak için bu bilgisayara ve telefona <b>Tailscale</b> (ücretsiz) kur, aynı hesapla giriş yap. Sonra burada <code>100.x.x.x</code> adresi görünür.</small>
+      <button id="tunnelBtn" type="button">İnternetten erişimi aç (Cloudflare, ücretsiz)</button>
+      <div id="tunnelInfo" style="display:none;gap:6px">
+        <small>Telefonda internetin olan her yerden bu adresi aç:</small>
+        <div><code id="tunnelUrl"></code></div>
+        <img id="tunnelQr" alt="QR kod" style="width:180px;height:180px">
+        <small class="err">Bu adres internete açıktır, yalnızca parolan korur. İşin bitince kapat. Adres her açışta değişir.</small>
+      </div>
+      <div id="tunnelMsg" class="err"></div>
       <form id="formPw">
         <label>Parolayı değiştir (en az 10 karakter) <input id="newPw" type="password" autocomplete="new-password"></label>
         <button type="submit">Parolayı güncelle</button>

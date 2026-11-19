@@ -9,7 +9,8 @@
   "scripts": {
     "start": "electron .",
     "prepare-bundle": "node scripts/prepare.js",
-    "dist": "npm run prepare-bundle && electron-builder"
+    "fetch-cloudflared": "node scripts/fetch-cloudflared.js",
+    "dist": "npm run prepare-bundle && npm run fetch-cloudflared && electron-builder"
   },
   "dependencies": {
     "@nut-tree-fork/nut-js": "^4.2.0",
@@ -23,10 +24,12 @@
   "build": {
     "appId": "io.github.openremotedesktop.app",
     "productName": "OpenRemoteDesktop",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "preload.js", "input.js", "host.html", "host.js", "icon.png", "bundled/**/*", "package.json"],
     "asarUnpack": ["node_modules/@nut-tree-fork/**"],
     "afterPack": "scripts/adhoc-sign.js",
+    "extraResources": [{ "from": "vendor/cloudflared", "to": "cloudflared", "filter": ["!.stamp"] }],
     "mac": {
       "category": "public.app-category.utilities",
       "target": [{ "target": "dmg", "arch": ["arm64"] }, { "target": "zip", "arch": ["arm64"] }],

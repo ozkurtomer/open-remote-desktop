@@ -69,6 +69,30 @@ async function loadNet() {
   $('qr').style.display = n.qr ? 'block' : 'none';
   $('tsHint').style.display = n.urls.some((u) => u.kind === 'tailscale') ? 'none' : 'block';
 }
+// ---------- internetten erişim (Cloudflare tüneli) ----------
+let tunnelOn = false;
+const TUNNEL_LABEL = 'İnternetten erişimi aç (Cloudflare, ücretsiz)';
+function tunnelClosed() {
+  tunnelOn = false;
+  $('tunnelInfo').style.display = 'none';
+  $('tunnelBtn').textContent = TUNNEL_LABEL;
+}
+$('tunnelBtn').onclick = async () => {
+  if (tunnelOn) { await window.api.tunnelStop(); return tunnelClosed(); }
+  $('tunnelBtn').disabled = true;
+  $('tunnelMsg').textContent = 'Tünel açılıyor (10-40 saniye sürebilir)...';
+  const r = await window.api.tunnelStart();
+  $('tunnelBtn').disabled = false;
+  if (!r.ok) { $('tunnelMsg').textContent = r.error; return; }
+  tunnelOn = true;
+  $('tunnelMsg').textContent = '';
+  $('tunnelUrl').textContent = r.url;
+  $('tunnelQr').src = r.qr;
+  $('tunnelInfo').style.display = 'grid';
+  $('tunnelBtn').textContent = 'İnternetten erişimi kapat';
+};
+window.api.onTunnelClosed(tunnelClosed);
+
 $('formPw').onsubmit = async (e) => {
   e.preventDefault();
   const r = await window.api.personalSetPassword({ password: $('newPw').value });
@@ -82,6 +106,7 @@ $('reset').onclick = async () => {
   clearTimeout(timer);
   cleanup();
   if (ws) ws.close();
+  tunnelClosed();
   await window.api.reset();
   init();
 };
