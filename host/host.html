@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; img-src data:; connect-src ws: wss:">
+<title>Uzak Masaüstü - Host</title>
+<style>
+  body{font-family:system-ui,sans-serif;padding:20px;display:grid;gap:12px}
+  input,button{padding:8px;font-size:15px}
+  label{display:grid;gap:3px;font-size:13px;color:#555}
+  form{display:grid;gap:10px}
+  .tabs{display:flex;gap:6px}
+  .tabs button{flex:1;background:#eee;border:1px solid #ccc;border-radius:6px}
+  .tabs button.on{background:#2f6fed;color:#fff;border-color:#2f6fed}
+  #status{min-height:1.4em;font-weight:600}
+  .live{color:#c00}
+  .err{color:#b60}
+  small{color:#777}
+  code{background:#f2f2f2;padding:2px 5px;border-radius:4px;user-select:all}
+  #qr{display:none;width:180px;height:180px}
+  fieldset{border:1px solid #ddd;border-radius:8px;display:grid;gap:8px}
+</style>
+</head>
+<body>
+  <h3>Uzak Masaüstü Host</h3>
+
+  <div id="setupBox" style="display:none;gap:12px">
+    <div class="tabs"><button id="tabP" class="on" type="button">Kişisel (sadece ben)</button><button id="tabS" type="button">Sunucuya bağlan</button></div>
+
+    <form id="formP">
+      <small>Bu bilgisayara telefonundan veya başka cihazdan ulaşmak için. Ayrı sunucu gerekmez, sunucu bu uygulamanın içinde çalışır.</small>
+      <label>Bağlanırken kullanacağın parola (en az 10 karakter) <input id="pPw" type="password" autocomplete="new-password" required></label>
+      <label>Bu bilgisayarın adı <input id="pName" required></label>
+      <button type="submit">Başlat</button>
+      <div id="pMsg" class="err"></div>
+    </form>
+
+    <form id="formS" style="display:none">
+      <small>Şirket veya kendi sunucuna bağlan. Parola saklanmaz.</small>
+      <label>Sunucu adresi <input id="server" placeholder="https://rc.sirket.local" required></label>
+      <label>Kullanıcı adı <input id="user" autocomplete="username" required></label>
+      <label>Parola <input id="pw" type="password" autocomplete="current-password" required></label>
+      <label>Bu bilgisayarın adı <input id="name" required></label>
+      <button type="submit">Bağla</button>
+      <div id="setupMsg" class="err"></div>
+    </form>
+  </div>
+
+  <div id="main" style="display:none;gap:12px">
+    <div><b id="devName"></b><br><small id="devInfo"></small></div>
+    <div id="status"></div>
+
+    <fieldset id="personalBox" style="display:none">
+      <legend>Telefondan / başka cihazdan bağlan</legend>
+      <small>Tarayıcıda şu adreslerden birini aç, parolanla giriş yap:</small>
+      <div id="urls"></div>
+      <img id="qr" alt="QR kod">
+      <small id="tsHint" style="display:none">Evin dışından bağlanmak için bu bilgisayara ve telefona <b>Tailscale</b> (ücretsiz) kur, aynı hesapla giriş yap. Sonra burada <code>100.x.x.x</code> adresi görünür.</small>
+      <form id="formPw">
+        <label>Parolayı değiştir (en az 10 karakter) <input id="newPw" type="password" autocomplete="new-password"></label>
+        <button type="submit">Parolayı güncelle</button>
+        <div id="pwMsg"></div>
+      </form>
+    </fieldset>
+
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:#222">
+      <input type="checkbox" id="consent"> Her bağlantıda bana sor (uzaktayken bağlanacaksan kapalı bırak)
+    </label>
+    <button id="stop" disabled>Bağlantıyı kes</button>
+    <button id="reset">Hesabı kaldır / değiştir</button>
+    <small>Pencereyi kapatsan da uygulama arka planda çalışır (tepsi simgesi).</small>
+  </div>
+  <script src="host.js"></script>
+</body>
+</html>

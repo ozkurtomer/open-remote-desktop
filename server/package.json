@@ -1,0 +1,14 @@
+{
+  "name": "rc-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "admin": "node admin.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "ldapts": "^7.2.0",
+    "ws": "^8.18.0"
+  }
+}

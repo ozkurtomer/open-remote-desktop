@@ -1,0 +1,45 @@
+# VPN / iç ağ kurulumu: signaling + TLS proxy (Caddy) + TURN (coturn). Dış internet gerekmez.
+# Kullanım: cp .env.example .env  (doldur)  ->  docker compose up -d --build
+services:
+  signaling:
+    build: .
+    restart: unless-stopped
+    environment:
+      TRUST_PROXY: "1"
+      AUTH_MODE: ${AUTH_MODE:-ldap}
+      LDAP_URL: ${LDAP_URL:-}
+      LDAP_BASE_DN: ${LDAP_BASE_DN:-}
+      LDAP_BIND_DN: ${LDAP_BIND_DN:-}
+      LDAP_BIND_PASSWORD: ${LDAP_BIND_PASSWORD:-}
+      LDAP_USER_FILTER: ${LDAP_USER_FILTER:-(|(sAMAccountName={u})(uid={u})(userPrincipalName={u}))}
+      LDAP_ID_ATTR: ${LDAP_ID_ATTR:-sAMAccountName}
+      LDAP_REQUIRED_GROUP: ${LDAP_REQUIRED_GROUP:-}
+      LDAP_STARTTLS: ${LDAP_STARTTLS:-0}
+      LDAP_CA_FILE: ${LDAP_CA_FILE:-}
+      TURN_URLS: turn:${RC_HOST}:3478?transport=udp,turn:${RC_HOST}:3478?transport=tcp
+      TURN_SECRET: ${TURN_SECRET:?TURN_SECRET gerekli}
+    volumes:
+      - rc-data:/data
+      - ./certs:/certs:ro   # LDAP_CA_FILE=/certs/ldap-ca.pem gibi
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["443:443"]
+    environment:
+      RC_HOST: ${RC_HOST:?RC_HOST gerekli}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro   # rc.crt + rc.key (şirket CA'sından)
+
+  coturn:
+    image: coturn/coturn:latest
+    restart: unless-stopped
+    network_mode: host
+    command: >
+      -n --use-auth-secret --static-auth-secret=${TURN_SECRET}
+      --realm=rc --fingerprint --no-multicast-peers --no-cli
+      --listening-port=3478 --min-port=49160 --max-port=49200
+
+volumes:
+  rc-data:

@@ -1,0 +1,9 @@
+*.log
+.DS_Store
+.env
+certs/
+dist/
+host/bundled/
+node_modules/
+release/
+server/data/

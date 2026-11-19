@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Uzak Masaüstü</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;color:#eee;font-family:system-ui,sans-serif}
+  .card{max-width:420px;margin:12vh auto;padding:0 16px;display:grid;gap:10px}
+  input,button{padding:10px;font-size:16px;border-radius:6px;border:1px solid #444;background:#222;color:#eee}
+  button{background:#2f6fed;border:0;cursor:pointer}
+  button:disabled{background:#444;cursor:default;color:#888}
+  button.danger{background:#7a2a2a}
+  button.ghost{background:transparent;border:1px solid #555}
+  #msg{min-height:1.2em;color:#f90}
+  header{display:flex;justify-content:space-between;align-items:center}
+  ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  li{display:flex;align-items:center;gap:10px;background:#1c1c1c;border:1px solid #333;border-radius:8px;padding:10px}
+  li .info{flex:1;min-width:0}
+  li small{color:#999;display:block}
+  .dot{width:10px;height:10px;border-radius:50%;background:#666;flex:none}
+  .dot.on{background:#3c3}
+  #screen{display:none;width:100vw;height:100vh;object-fit:contain;background:#000;outline:none;touch-action:none;-webkit-user-select:none;user-select:none}
+  #bar{display:none;position:fixed;top:0;left:0;right:0;z-index:2;gap:4px;padding:4px;overflow-x:auto;background:rgba(0,0,0,.6)}
+  #bar button{flex:none;padding:6px 10px;font-size:14px;background:#333;border-radius:6px}
+  #bar button.on{background:#2f6fed}
+  #bar #off{background:#c33}
+  #kbd{position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px}
+</style>
+</head>
+<body>
+<form id="login" class="card">
+  <h2>Uzak Masaüstü</h2>
+  <input id="user" placeholder="Kullanıcı adı" autocomplete="username" required>
+  <input id="pw" type="password" placeholder="Parola" autocomplete="current-password" required>
+  <button type="submit">Giriş yap</button>
+  <div id="loginMsg" class="msg" style="color:#f90"></div>
+</form>
+
+<div id="devices" class="card" style="display:none">
+  <header><h2 id="hello">Cihazlarım</h2><button id="logout" class="ghost">Çıkış</button></header>
+  <ul id="list"></ul>
+  <div id="msg"></div>
+</div>
+
+<div id="bar">
+  <button id="tbKbd">⌨ Klavye</button><button id="tbEsc">Esc</button><button id="tbTab">Tab</button>
+  <button id="tbCtrl">Ctrl</button><button id="tbMeta">⌘/Win</button><button id="tbAlt">Alt</button>
+  <button id="tbL">←</button><button id="tbU">↑</button><button id="tbD">↓</button><button id="tbR">→</button>
+  <button id="tbMode">İmleç modu</button><button id="off">Kes</button>
+</div>
+<input id="kbd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-hidden="true" tabindex="-1">
+<video id="screen" autoplay playsinline muted tabindex="0"></video>
+<script src="app.js"></script>
+</body>
+</html>

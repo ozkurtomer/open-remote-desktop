@@ -1,0 +1,6 @@
+# İç ağ TLS sonlandırma. Sertifika şirket CA'sından alınır (certs/rc.crt, certs/rc.key).
+# Şirket CA'sı yoksa: "tls internal" (Caddy kendi CA'sını üretir; kök sertifikayı cihazlara dağıtmanız gerekir).
+{$RC_HOST} {
+	tls /certs/rc.crt /certs/rc.key
+	reverse_proxy signaling:8080
+}

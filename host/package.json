@@ -1,0 +1,38 @@
+{
+  "name": "open-remote-desktop",
+  "productName": "OpenRemoteDesktop",
+  "version": "1.0.0",
+  "description": "Kendi bilgisayarına uzaktan erişim: açık kaynak, ücretsiz, kişisel kullanım",
+  "author": "Open Remote Desktop contributors",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prepare-bundle": "node scripts/prepare.js",
+    "dist": "npm run prepare-bundle && electron-builder"
+  },
+  "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.0",
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.github.openremotedesktop.app",
+    "productName": "OpenRemoteDesktop",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "input.js", "host.html", "host.js", "icon.png", "bundled/**/*", "package.json"],
+    "asarUnpack": ["node_modules/@nut-tree-fork/**"],
+    "afterPack": "scripts/adhoc-sign.js",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [{ "target": "dmg", "arch": ["arm64"] }, { "target": "zip", "arch": ["arm64"] }],
+      "identity": null
+    },
+    "win": { "target": ["nsis", "zip"] },
+    "linux": { "target": ["AppImage"], "category": "Utility" }
+  }
+}
