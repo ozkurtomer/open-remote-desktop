@@ -52,7 +52,7 @@ Sunucu yalnızca giriş ve bağlantı kurulumunu (signaling) yönetir. Görünt�
 | macOS (Apple Silicon) | `OpenRemoteDesktop-*-mac-arm64.dmg` | Denendi (yerel derleme) |
 | macOS (Intel) | `OpenRemoteDesktop-*-mac-x64.dmg` | GitHub Actions ile üretilir, **denenmedi** |
 | Windows | `OpenRemoteDesktop-*-win-x64.exe` | GitHub Actions ile üretilir, **denenmedi** |
-| Linux | `OpenRemoteDesktop-*-linux-x64.AppImage` | GitHub Actions ile üretilir, **denenmedi** |
+| Linux | `OpenRemoteDesktop-*-linux-x86_64.AppImage` | GitHub Actions ile üretilir, **denenmedi** |
 
 **macOS:** `.dmg`'yi aç, uygulamayı **Applications**'a sürükle. Uygulama Apple'a ücretli kayıtlı bir geliştirici imzası taşımıyor (ücretsiz "ad-hoc" imzalı), bu yüzden ilk açılışta macOS "doğrulanamadı" diyebilir:
 - uygulamaya **sağ tık → Aç → Aç**, veya
@@ -192,7 +192,7 @@ Download the right file for your system from the [**Releases**](../../releases) 
 | macOS (Apple Silicon) | `OpenRemoteDesktop-*-mac-arm64.dmg` | Tested (local build) |
 | macOS (Intel) | `OpenRemoteDesktop-*-mac-x64.dmg` | Built by GitHub Actions, **untested** |
 | Windows | `OpenRemoteDesktop-*-win-x64.exe` | Built by GitHub Actions, **untested** |
-| Linux | `OpenRemoteDesktop-*-linux-x64.AppImage` | Built by GitHub Actions, **untested** |
+| Linux | `OpenRemoteDesktop-*-linux-x86_64.AppImage` | Built by GitHub Actions, **untested** |
 
 **macOS:** Open the `.dmg` and drag the app to **Applications**. The app is not signed with a paid Apple developer certificate (it uses a free "ad-hoc" signature), so macOS may say it "cannot be verified" on first launch:
 - **right-click the app → Open → Open**, or
